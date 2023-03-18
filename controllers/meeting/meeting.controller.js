@@ -7,8 +7,19 @@ module.exports = exports = {
 
   /*meeting crud*/
   createMeeting: async (req, res) => {
-    req.body.startDate = new Date(req.body.startDate);
-    req.body.endDate = new Date(req.body.endDate);
+    // joi validator error handling
+    if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
+
+    let meetingAvailable = await DB.MEETING.find({
+      room_id: req.body.room_id, $or: [
+        { startTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
+        { endTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
+        { $and: [{ startTime: { $lt: new Date(req.body.startTime) } }, { endTime: { $gt: new Date(req.body.endTime) } }] }
+      ]
+    });
+    if (meetingAvailable.length) return apiResponse.BAD_REQUEST({ res, message: messages.MEETING_ALREADY_EXISTS });
+
+    // let meeting
     let meeting = await DB.MEETING.create(req.body);
     if (meeting) {
       let room = await ROOM.findById(req.body.room_id);
@@ -18,6 +29,7 @@ module.exports = exports = {
 
   },
   getMeeting: async (req, res) => {
+    if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
 
     let { page, limit, sortBy, sortOrder, search, ...query } = req.query;
     page = parseInt(page) || 1;
@@ -41,7 +53,20 @@ module.exports = exports = {
 
   updateMeeting: async (req, res) => {
     const meeting = await DB.MEETING.findById(req.params._id);
+    if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
+
     if (!meeting) return apiResponse.NOT_FOUND({ res, message: messages.NOT_FOUND });
+
+    let meetingAvailable = await DB.MEETING.find({
+      _id: { $ne: req.params._id },
+      room_id: req.body.room_id, $or: [
+        { startTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
+        { endTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
+        { $and: [{ startTime: { $lt: new Date(req.body.startTime) } }, { endTime: { $gt: new Date(req.body.endTime) } }] }
+      ]
+    });
+
+    if (meetingAvailable.length) return apiResponse.BAD_REQUEST({ res, message: messages.MEETING_ALREADY_EXISTS });
 
     if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
     if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);
@@ -52,16 +77,19 @@ module.exports = exports = {
 
   /*room crud*/
   getRoom: async (req, res) => {
+    if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
     const data = await DB.ROOM.find()
     return apiResponse.OK({ res, message: messages.ROOM_FETCHED, count: await DB.ROOM.countDocuments(), data });
   },
 
   createRoom: async (req, res) => {
+    if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
     const room = await DB.ROOM.create(req.body)
     return apiResponse.OK({ res, message: messages.ROOM_CREATED, room });
   },
 
   updateRoom: async (req, res) => {
+    if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
     let room = await DB.ROOM.findById(req.params.room_id);
     if (!room) return apiResponse.NOT_FOUND({ res, message: messages.NOT_FOUND });
 
@@ -70,6 +98,7 @@ module.exports = exports = {
   },
 
   deleteRoom: async (req, res) => {
+    if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
     let { room_id } = req.query
     if (!await ROOM.findOne({ _id: room_id })) return apiResponse.NOT_FOUND({ res, message: "room not found" });
     await ROOM.findOneAndDelete({ _id: room_id })
