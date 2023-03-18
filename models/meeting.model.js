@@ -4,10 +4,10 @@ const message = require("../json/message.json");
 
 const meetingSchema = new Schema(
   {
-    name: { type: String, unique: true, },
+    name: { type: String },
     room_id: { type: Schema.Types.ObjectId, ref: "room", required: true, },
-    startDate: { type: Date, required: true, },
-    endDate: { type: Date, required: true, },
+    startDate: { type: Date, },
+    endDate: { type: Date, },
     startTime: { type: Date },
     endTime: { type: Date },
     length: { type: Number, default: 15 },
