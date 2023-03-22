@@ -9,7 +9,7 @@ module.exports = {
       endDate: Joi.string().required(),
       name: Joi.string(),
       room_id: Joi.string().required(),
-      length: Joi.number().required(),
+      length: Joi.number(),
       description: Joi.string().required(),
     }),
   }),
