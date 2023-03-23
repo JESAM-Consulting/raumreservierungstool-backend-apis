@@ -29,6 +29,13 @@ module.exports = {
         .required(),
     }),
   }),
+  delete: validator({
+    params: Joi.object({
+      _id: Joi.string()
+        .pattern(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    }),
+  }),
   fetch: validator({
     query: Joi.object({
       _id: Joi.string()

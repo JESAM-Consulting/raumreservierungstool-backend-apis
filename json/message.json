@@ -24,6 +24,7 @@
   "MEETING_ALREADY_INVITED": "Meeting already invited.",
   "MEETING_CREATED": "Meeting created successfully.",
   "MEETING_UPDATED": "Meeting updated successfully.",
+  "MEETING_DELETED": "Meeting deleted successfully.",
   "ROOM_NOT_FOUND": "Room not found.",
   "ROOM_ALREADY_DELETED": "Room already deleted.",
   "ROOM_ALREADY_JOINED": "Room already joined.",

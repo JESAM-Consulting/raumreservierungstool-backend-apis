@@ -2,6 +2,7 @@ const messages = require("../../json/message.json");
 const apiResponse = require("../../utils/api.response");
 const DB = require("../../models");
 const { ROOM } = require("../../models");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports = exports = {
 
@@ -73,6 +74,13 @@ module.exports = exports = {
 
     let data = await DB.MEETING.findByIdAndUpdate(req.params._id, req.body, { new: true });
     return apiResponse.OK({ res, message: messages.MEETING_UPDATED, data });
+  },
+  deleteMeeting: async (req, res) => {
+    const meeting = await DB.MEETING.findOne({ _id: req.params._id });
+    if (!meeting) return apiResponse.NOT_FOUND({ res, message: messages.NOT_FOUND });
+
+    let data = await DB.MEETING.findOneAndDelete({ _id: req.params._id });
+    return apiResponse.OK({ res, message: messages.MEETING_DELETED });
   },
 
   /*room crud*/

@@ -15,4 +15,8 @@ router.post("/room", VALIDATOR.createRoom, APIS.createRoom);
 
 router.put("/room/:room_id", VALIDATOR.updateRoom, APIS.updateRoom);
 router.put("/:_id", VALIDATOR.update, APIS.updateMeeting);
+
+router.delete("/:_id", VALIDATOR.delete, APIS.deleteMeeting);
+
+
 module.exports = router;
