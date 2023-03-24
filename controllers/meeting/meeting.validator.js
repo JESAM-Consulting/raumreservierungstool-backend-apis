@@ -10,7 +10,7 @@ module.exports = {
       name: Joi.string(),
       room_id: Joi.string(),
       length: Joi.number(),
-      description: Joi.string(),
+      description: Joi.string().allow(null, ""),
     }),
   }),
   update: validator({
