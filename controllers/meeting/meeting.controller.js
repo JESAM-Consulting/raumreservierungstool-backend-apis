@@ -10,6 +10,9 @@ module.exports = exports = {
   createMeeting: async (req, res) => {
     // joi validator error handling
     if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
+    if (new Date(req.body.startTime) < new Date() || new Date(req.body.endTime) < new Date() || new Date(req.body.endTime) < new Date(req.body.startTime)) {
+      return apiResponse.BAD_REQUEST({ res, message: "meeting start time or end time greter than current time or mettin endtime before start time" })
+    }
 
     let meetingAvailable = await DB.MEETING.find({
       room_id: req.body.room_id, $or: [
