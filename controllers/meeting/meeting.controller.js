@@ -14,16 +14,31 @@ module.exports = exports = {
       return apiResponse.BAD_REQUEST({ res, message: "meeting start time or end time greter than current time or metting endtime before start time" })
     }
 
+    req.body.startTime = new Date(req.body.startTime)
+    req.body.endTime = new Date(req.body.endTime)
+
+    let startTime = req.body.startTime
+    let endTime = req.body.endTime
+    let room_id = req.body.room_id
+
+    //check meeting avability in no repeat mode
     let meetingAvailable = await DB.MEETING.find({
       room_id: req.body.room_id, $or: [
-        { startTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
-        { endTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
-        { $and: [{ startTime: { $lt: new Date(req.body.startTime) } }, { endTime: { $gt: new Date(req.body.endTime) } }] }
+        { startTime: { $gte: startTime, $lte: endTime } },
+        { endTime: { $gte: startTime, $lte: endTime } },
+        { $and: [{ startTime: { $lt: startTime } }, { endTime: { $gt: endTime } }] }
       ]
     });
     if (meetingAvailable.length) return apiResponse.BAD_REQUEST({ res, message: messages.MEETING_ALREADY_EXISTS });
 
-    // let meeting
+
+    //check meeting avability in daily, weekly, monthly ,yearly mode
+    if (await checkMeetinAvailability('daily', startTime, endTime, room_id, null)
+      || await checkMeetinAvailability('weekly', startTime, endTime, room_id, null)
+      || await checkMeetinAvailability('monthly', startTime, endTime, room_id, null)
+      || await checkMeetinAvailability('yearly', startTime, endTime, room_id, null))
+      return apiResponse.BAD_REQUEST({ res, message: messages.MEETING_ALREADY_EXISTS });
+
     let meeting = await DB.MEETING.create(req.body);
     if (meeting) {
       let room = await ROOM.findById(req.body.room_id);
@@ -56,9 +71,8 @@ module.exports = exports = {
   },
 
   updateMeeting: async (req, res) => {
-    const meeting = await DB.MEETING.findById(req.params._id);
     if (req.error) return apiResponse.BAD_REQUEST({ res, message: req.error.details[0].payload["context"] });
-
+    const meeting = await DB.MEETING.findById(req.params._id);
     if (!meeting) return apiResponse.NOT_FOUND({ res, message: messages.NOT_FOUND });
 
     let meetingAvailable = await DB.MEETING.find({
@@ -69,11 +83,19 @@ module.exports = exports = {
         { $and: [{ startTime: { $lt: new Date(req.body.startTime) } }, { endTime: { $gt: new Date(req.body.endTime) } }] }
       ]
     });
-
     if (meetingAvailable.length) return apiResponse.BAD_REQUEST({ res, message: messages.MEETING_ALREADY_EXISTS });
 
     if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
     if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);
+    let startTime = req.body.startTime || meeting.startTime;
+    let endTime = req.body.endTime || meeting.endTime;
+
+    //check meeting avability in daily, weekly, monthly ,yearly mode
+    if (await checkMeetinAvailability('daily', startTime, endTime, room_id, req.params._id)
+      || await checkMeetinAvailability('weekly', startTime, endTime, room_id, req.params._id)
+      || await checkMeetinAvailability('monthly', startTime, endTime, room_id, req.params._id)
+      || await checkMeetinAvailability('yearly', startTime, endTime, room_id, req.params._id))
+      return apiResponse.BAD_REQUEST({ res, message: messages.MEETING_ALREADY_EXISTS });
 
     let data = await DB.MEETING.findByIdAndUpdate(req.params._id, req.body, { new: true });
     return apiResponse.OK({ res, message: messages.MEETING_UPDATED, data });
@@ -117,3 +139,39 @@ module.exports = exports = {
   },
 
 };
+async function checkMeetinAvailability(type, startTime, endTime, room_id, meeting_id) {
+  let month = startTime.getMonth() + 1
+  let day = startTime.getDate()
+  let week = startTime.getDay()
+  let startTimeMinute = (startTime.getHours() * 60) + startTime.getMinutes()
+  let endTimeMinute = (endTime.getHours() * 60) + endTime.getMinutes()
+
+  let data = await DB.MEETING.aggregate([[
+    { '$match': { 'repeat': type, 'room_id': room_id } }, {
+      '$addFields': {
+        '_startTime': { '$toInt': { '$dateToString': { 'date': '$startTime', 'format': '%H%M' } } },
+        '_endTime': { '$toInt': { '$dateToString': { 'date': '$endTime', 'format': '%H%M' } } },
+        'month': { '$toInt': { '$dateToString': { 'date': '$startTime', 'format': '%m' } } },
+        'day': { '$toInt': { '$dateToString': { 'date': '$startTime', 'format': '%d' } } },
+        'week': { '$toInt': { '$dateToString': { 'date': '$startTime', 'format': '%w' } } }
+      }
+    }, {
+      '$match': {
+        '$and': [
+          ...(type == 'weekly') ? [{ 'week': week }] : [],
+          ...(type == 'monthly') ? [{ 'day': day }] : [],
+          ...(type == 'yearly') ? [{ 'month': month }, { 'day': day }] : [],
+          {
+            '$or': [
+              { '_startTime': { '$gt': startTimeMinute, '$lt': endTimeMinute } },
+              { '_endTime': { '$gt': startTimeMinute, '$lt': endTimeMinute } },
+              { '$and': [{ '_startTime': { '$lt': startTimeMinute } }, { '_endTime': { '$gt': endTimeMinute } }] }
+            ]
+          }
+        ]
+      }
+    }
+  ]]);
+  if (data.length == 1 && data[0]._id == meeting_id) return false
+  return data.length > 0
+}

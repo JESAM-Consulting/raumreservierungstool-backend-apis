@@ -11,6 +11,7 @@ module.exports = {
       room_id: Joi.string(),
       length: Joi.number(),
       description: Joi.string().allow(null, ""),
+      repeat: Joi.string().valid("daily", "weekly", "monthly", "yearly", "noRepeat").default("noRepeat"),
     }),
   }),
   update: validator({
@@ -21,7 +22,9 @@ module.exports = {
       endDate: Joi.string(), name: Joi.string(),
       room_id: Joi.string(),
       length: Joi.number(),
-      description: Joi.string(),
+      description: Joi.string().allow(null, ""),
+      repeat: Joi.string().valid("daily", "weekly", "monthly", "yearly", "noRepeat"),
+
     }),
     params: Joi.object({
       _id: Joi.string()

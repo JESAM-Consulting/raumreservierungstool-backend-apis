@@ -12,6 +12,7 @@ const meetingSchema = new Schema(
     endTime: { type: Date },
     length: { type: Number, default: 15 },
     description: { type: String },
+    repeat: { type: String, },
   },
   { timestamps: true, versionKey: false, }
 );
