@@ -77,7 +77,7 @@ module.exports = exports = {
 
     let meetingAvailable = await DB.MEETING.find({
       _id: { $ne: req.params._id },
-      room_id: req.body.room_id, $or: [
+      room_id: meeting.room_id, $or: [
         { startTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
         { endTime: { $gte: new Date(req.body.startTime), $lte: new Date(req.body.endTime) } },
         { $and: [{ startTime: { $lt: new Date(req.body.startTime) } }, { endTime: { $gt: new Date(req.body.endTime) } }] }
@@ -91,10 +91,10 @@ module.exports = exports = {
     let endTime = req.body.endTime || meeting.endTime;
 
     //check meeting avability in daily, weekly, monthly ,yearly mode
-    if (await checkMeetinAvailability('daily', startTime, endTime, room_id, req.params._id)
-      || await checkMeetinAvailability('weekly', startTime, endTime, room_id, req.params._id)
-      || await checkMeetinAvailability('monthly', startTime, endTime, room_id, req.params._id)
-      || await checkMeetinAvailability('yearly', startTime, endTime, room_id, req.params._id))
+    if (await checkMeetinAvailability('daily', startTime, endTime, meeting.room_id, req.params._id)
+      || await checkMeetinAvailability('weekly', startTime, endTime, meeting.room_id, req.params._id)
+      || await checkMeetinAvailability('monthly', startTime, endTime, meeting.room_id, req.params._id)
+      || await checkMeetinAvailability('yearly', startTime, endTime, meeting.room_id, req.params._id))
       return apiResponse.BAD_REQUEST({ res, message: messages.MEETING_ALREADY_EXISTS });
 
     let data = await DB.MEETING.findByIdAndUpdate(req.params._id, req.body, { new: true });
@@ -139,6 +139,8 @@ module.exports = exports = {
   },
 
 };
+
+//function for chcek meeting avability
 async function checkMeetinAvailability(type, startTime, endTime, room_id, meeting_id) {
   let month = startTime.getMonth() + 1
   let day = startTime.getDate()
