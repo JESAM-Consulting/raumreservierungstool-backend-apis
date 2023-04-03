@@ -13,6 +13,8 @@ const meetingSchema = new Schema(
     length: { type: Number, default: 15 },
     description: { type: String },
     repeat: { type: String, },
+    interval: { type: Number },
+    freq: { type: String }
   },
   { timestamps: true, versionKey: false, }
 );
