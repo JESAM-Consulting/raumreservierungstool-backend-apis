@@ -13,7 +13,7 @@ module.exports = {
       description: Joi.string().allow(null, ""),
       repeat: Joi.string().valid("daily", "weekly", "monthly", "yearly", "noRepeat", "custom").default("noRepeat"),
       interval: Joi.number().allow(null, ""),
-      freq: Joi.stirngF().allow(null, "")
+      freq: Joi.string().allow(null, "")
     }),
   }),
   update: validator({
@@ -27,7 +27,7 @@ module.exports = {
       description: Joi.string().allow(null, ""),
       repeat: Joi.string().valid("daily", "weekly", "monthly", "yearly", "noRepeat", "custom"),
       interval: Joi.number().allow(null, ""),
-      freq: Joi.stirngF().allow(null, "")
+      freq: Joi.string().allow(null, "")
 
     }),
     params: Joi.object({
