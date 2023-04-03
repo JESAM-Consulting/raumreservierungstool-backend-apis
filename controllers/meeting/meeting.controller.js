@@ -87,8 +87,8 @@ module.exports = exports = {
 
     if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
     if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);
-    let startTime = req.body.startTime || meeting.startTime;
-    let endTime = req.body.endTime || meeting.endTime;
+    let startTime = new Date(req.body.startTime) || new Date(meeting.startTime);
+    let endTime = new Date(req.body.endTime) || new Date(meeting.endTime);
 
     //check meeting avability in daily, weekly, monthly ,yearly mode
     if (await checkMeetinAvailability('daily', startTime, endTime, meeting.room_id, req.params._id)
